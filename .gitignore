@@ -2,13 +2,14 @@
 # Modelos y datos pesados (versionados con DVC, no con Git)
 # ─────────────────────────────────────────────────────────────
 data/processed/
-models/*.pt
-models/*.bin
-models/*.safetensors
-models/checkpoint-*/
 
-# Excepción: pesos LoRA son pequeños (~MB), SÍ van a Git
-# pero el modelo base completo NO
+# Checkpoints intermedios del Trainer — pesados (optimizer.pt, rng_state, etc.)
+# y regenerables al re-entrenar. NO incluyen nada que no esté ya en lora_weights/
+models/*/checkpoints/
+
+# lora_weights/ SÍ se sube a Git — son los pesos finales del adaptador LoRA,
+# ligeros (~2-5 MB) y necesarios para que inference.py funcione sin
+# tener que re-entrenar. Ver models/*/lora_weights/
 
 # ─────────────────────────────────────────────────────────────
 # Secretos
