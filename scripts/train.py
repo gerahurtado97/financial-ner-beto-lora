@@ -28,8 +28,30 @@ import numpy as np
 import torch
 
 SEED = 42
-torch.manual_seed(SEED)
-np.random.seed(SEED)
+
+
+def set_all_seeds(seed: int = SEED) -> None:
+    """
+    Fija TODAS las fuentes de aleatoriedad relevantes.
+
+    Se llama justo antes de construir el modelo LoRA (no solo al
+    importar el módulo) porque get_peft_model() inicializa las
+    matrices A/B con el generador global de PyTorch — si ya avanzó
+    por la carga del tokenizer/modelo base, la inicialización de
+    LoRA varía entre corridas aunque "SEED" sea la misma constante.
+    """
+    import random
+
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+set_all_seeds(SEED)
 
 
 def parse_args() -> argparse.Namespace:
@@ -73,6 +95,11 @@ def main() -> None:
     logger.info("Datos: train=%d val=%d", len(train_raw), len(val_raw))
 
     # ── 2. Construir modelo LoRA
+    # Re-fijar la semilla justo antes de get_peft_model(): la carga del
+    # tokenizer y del modelo base ya consumió estados del RNG global,
+    # así que sin este reset la inicialización de las matrices A/B de
+    # LoRA varía entre corridas aunque SEED sea constante.
+    set_all_seeds(SEED)
     model_cfg = config["model"]
     model, tokenizer = build_lora_model(
         base_model_name=model_cfg["base_model"],
@@ -129,6 +156,8 @@ def main() -> None:
         load_best_model_at_end=train_cfg["load_best_model_at_end"],
         logging_steps=10,
         report_to="none",
+        seed=SEED,        # controla inicialización de pesos no cubierta por LoRA
+        data_seed=SEED,   # controla el shuffle del DataLoader de entrenamiento
         save_total_limit=2,
     )
 
@@ -181,6 +210,45 @@ def main() -> None:
             "eval_f1": eval_metrics.get("eval_f1", 0),
         }, f, indent=2)
 
+    # ── 8. Registrar en MLflow
+    from financial_ner.evaluation.mlflow_logger import log_lora_run, setup_mlflow
+
+    mlflow_cfg = config.get("mlflow", {})
+    setup_mlflow(
+        mlflow_cfg.get("tracking_uri", "file:./mlruns"),
+        mlflow_cfg.get("experiment_name", "financial-ner-beto-lora"),
+    )
+
+    train_history = [
+        {k: v for k, v in log.items() if isinstance(v, (int, float))}
+        for log in trainer.state.log_history
+    ]
+
+    final_metrics = {
+        "precision": eval_metrics.get("eval_precision", 0),
+        "recall": eval_metrics.get("eval_recall", 0),
+        "f1": eval_metrics.get("eval_f1", 0),
+    }
+
+    # per_entity_scores requiere las predicciones crudas — las recalculamos
+    # sobre el set de validación para loggear el desglose por entidad
+    from financial_ner.evaluation.metrics import per_entity_scores
+
+    predictions_output = trainer.predict(val_dataset)
+    per_entity = per_entity_scores(predictions_output.predictions, predictions_output.label_ids)
+
+    run_id = log_lora_run(
+        lora_r=args.lora_r,
+        lora_alpha=args.lora_alpha,
+        param_counts=param_counts,
+        train_history=train_history,
+        final_metrics=final_metrics,
+        per_entity_metrics=per_entity,
+        model_path=final_model_path,
+        run_name=f"beto_lora_r{args.lora_r}",
+    )
+    logger.info("✓ MLflow run registrado: %s", run_id)
+
     logger.info("\n%s", "=" * 65)
     logger.info("  RESUMEN — LoRA r=%d", args.lora_r)
     logger.info("=" * 65)
@@ -188,6 +256,7 @@ def main() -> None:
     logger.info("  Precision (val): %.4f", eval_metrics.get("eval_precision", 0))
     logger.info("  Recall (val):    %.4f", eval_metrics.get("eval_recall", 0))
     logger.info("  Parámetros entrenables: %.3f%%", param_counts["trainable_pct"])
+    logger.info("  MLflow run_id:   %s", run_id)
     logger.info("=" * 65)
 
 
