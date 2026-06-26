@@ -1,0 +1,50 @@
+stages:
+  prepare_data:
+    cmd: python scripts/prepare_data.py
+    deps:
+      - scripts/prepare_data.py
+      - configs/model_config.yaml
+      - data/raw/financial_ner_dataset.json
+    outs:
+      - data/processed/train.json
+      - data/processed/val.json
+      - data/processed/test.json
+
+  train_r8:
+    cmd: python scripts/train.py --lora-r 8 --lora-alpha 16
+    deps:
+      - scripts/train.py
+      - configs/model_config.yaml
+      - data/processed/train.json
+      - data/processed/val.json
+      - src/financial_ner/
+    outs:
+      - models/ner_lora_r8/
+    metrics:
+      - models/metrics_r8.json:
+          cache: false
+
+  train_r16:
+    cmd: python scripts/train.py --lora-r 16 --lora-alpha 32
+    deps:
+      - scripts/train.py
+      - configs/model_config.yaml
+      - data/processed/train.json
+      - data/processed/val.json
+      - src/financial_ner/
+    outs:
+      - models/ner_lora_r16/
+    metrics:
+      - models/metrics_r16.json:
+          cache: false
+
+  evaluate:
+    cmd: python scripts/evaluate.py
+    deps:
+      - scripts/evaluate.py
+      - data/processed/test.json
+      - models/ner_lora_r8/
+      - models/ner_lora_r16/
+    metrics:
+      - models/seqeval_scores.json:
+          cache: false

@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────
+# Configuración del proyecto NER Financiero
+# Todos los hiperparámetros viven AQUÍ, no hardcodeados en el código
+# ─────────────────────────────────────────────────────────────
+
+project:
+  name: financial-ner-beto-lora
+  version: "0.1.0"
+  seed: 42
+
+# ─────────────────────────────────────────────────────────────
+# Entidades reconocidas (esquema BIO)
+# ─────────────────────────────────────────────────────────────
+labels:
+  scheme: "BIO"
+  classes:
+    - "O"
+    - "B-INSTR"
+    - "I-INSTR"
+    - "B-MONTO"
+    - "I-MONTO"
+    - "B-PLAZO"
+    - "I-PLAZO"
+    - "B-TASA"
+    - "I-TASA"
+    - "B-ENTIDAD"
+    - "I-ENTIDAD"
+
+data:
+  raw_path: "data/raw/financial_ner_dataset.json"
+  processed_path: "data/processed/"
+  train_size: 0.70
+  val_size: 0.15
+  test_size: 0.15
+  max_seq_len: 64
+
+model:
+  base_model: "dccuchile/bert-base-spanish-wwm-cased"  # BETO
+  num_labels: 11  # len(labels.classes)
+
+# ─────────────────────────────────────────────────────────────
+# LoRA — comparamos r=8 vs r=16 (Clase 10 del diplomado)
+# ─────────────────────────────────────────────────────────────
+lora:
+  task_type: "TOKEN_CLS"
+  target_modules: ["query", "value"]
+  lora_dropout: 0.1
+  configs_to_compare:
+    - r: 8
+      lora_alpha: 16
+    - r: 16
+      lora_alpha: 32
+
+training:
+  epochs: 30
+  batch_size: 8
+  learning_rate: 0.001    # LR alto es común en LoRA (visto en el lab de C10)
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  metric_for_best_model: "f1"
+  load_best_model_at_end: true
+  early_stopping_patience: 5
+
+mlflow:
+  tracking_uri: "file:./mlruns"
+  experiment_name: "financial-ner-beto-lora"
+
+evaluation:
+  metric: "seqeval"
+  scheme: "BIO"
