@@ -1,0 +1,11 @@
+{
+  "lora_r": 8,
+  "lora_alpha": 16,
+  "trainable_params": 303371,
+  "total_params": 109572118,
+  "trainable_pct": 0.2769,
+  "subtoken_split_ratio": 0.1755,
+  "eval_precision": 0.7546296296296297,
+  "eval_recall": 0.8489583333333334,
+  "eval_f1": 0.7990196078431373
+}
