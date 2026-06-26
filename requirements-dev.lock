@@ -2889,7 +2889,6 @@ torch==2.12.1 \
     --hash=sha256:f92609e3b3ce72f25e2eb780d043ced2480c1a86c47c852604fc7a9108648386 \
     --hash=sha256:fcb61ccd20784b62bdd78ec84238a5cfb383b4994902e03bac95505ab360884c
     # via
-    #   -r requirements.in
     #   accelerate
     #   peft
 tornado==6.5.7 \

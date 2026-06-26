@@ -3,8 +3,15 @@
 #   pip-compile requirements.in --generate-hashes -o requirements.lock
 #
 # El lockfile se sube a Git y garantiza reproducibilidad exacta.
+#
+# NOTA SOBRE TORCH: pip-compile no puede fijar de forma confiable una
+# build especifica de CUDA cuando el mismo nombre de paquete "torch"
+# existe en PyPI (CPU-only) y en el indice de PyTorch (CUDA). Por eso
+# torch se excluye de este lockfile y se instala por separado con el
+# indice correcto -- ver instrucciones en README.md, seccion Instalacion.
 
-torch>=2.2.0,<3.0
+# torch>=2.2.0,<3.0   <- instalar manualmente, ver README
+
 transformers>=4.40.0,<5.0
 peft>=0.10.0,<1.0
 datasets>=2.18.0,<4.0

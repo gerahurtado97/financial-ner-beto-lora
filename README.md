@@ -68,8 +68,24 @@ pip install -r requirements.lock
 pip install -r requirements-dev.lock
 pip install -e ".[dev]"
 
+# IMPORTANTE: torch llega como dependencia transitiva de accelerate/peft,
+# y pip-compile siempre resuelve esa entrada desde PyPI estándar (CPU-only)
+# porque "torch" existe con ese mismo nombre tanto en PyPI como en el
+# índice de PyTorch — no hay forma de que el lockfile fije la build CUDA
+# automáticamente. Por eso se reinstala torch explícitamente después,
+# sobre lo que ya quedó instalado:
+pip install torch --index-url https://download.pytorch.org/whl/cu121 --force-reinstall --no-deps
+# (ajusta cu121 a tu versión de CUDA si es distinta — ver
+#  https://pytorch.org/get-started/locally/)
+# --no-deps evita que pip intente resincronizar accelerate/peft/transformers,
+# que ya quedaron correctamente instalados por el paso anterior
+
 pre-commit install
 cp .env.example .env
+
+# Verificar que torch detecta la GPU correctamente:
+python -c "import torch; print(torch.cuda.is_available())"
+# Debe imprimir True
 ```
 
 ---
