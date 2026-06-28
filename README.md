@@ -1,4 +1,4 @@
-# 🏦 NER Financiero con BETO + LoRA
+# NER Financiero con BETO + LoRA
 
 Reconocimiento de Entidades Nombradas para texto financiero en español,
 mediante fine-tuning eficiente (LoRA) de BETO (BERT en español).
@@ -198,32 +198,32 @@ ejemplos de `inference.py`.
 financial-ner-beto-lora/
 ├── src/financial_ner/
 │   ├── data/
-│   │   ├── vocabularies.py    ← Pools TRAIN/HELDOUT disjuntos por entidad
-│   │   ├── templates.py       ← 9 plantillas sintácticas + negativas
-│   │   ├── generate_dataset.py← generate_train_val_test()
-│   │   ├── schema.py          ← Validación BIO (alineación, etiquetas válidas)
-│   │   ├── labels.py          ← Mapeo BIO <-> índices
-│   │   ├── alignment.py       ← Alineación subtoken (pieza más evaluada)
-│   │   └── split.py           ← (legacy, ya no usado tras el fix de vocab)
+│   │   ├── vocabularies.py    <- Pools TRAIN/HELDOUT disjuntos por entidad
+│   │   ├── templates.py       <- 9 plantillas sintácticas + negativas
+│   │   ├── generate_dataset.py<- generate_train_val_test()
+│   │   ├── schema.py          <- Validación BIO (alineación, etiquetas válidas)
+│   │   ├── labels.py          <- Mapeo BIO <-> índices
+│   │   ├── alignment.py       <- Alineación subtoken (pieza más evaluada)
+│   │   └── split.py           <- (legacy, ya no usado tras el fix de vocab)
 │   ├── model/
-│   │   └── lora_model.py      ← BETO + LoRA, comparación r=8/16/32
+│   │   └── lora_model.py      <- BETO + LoRA, comparación r=8/16/32
 │   └── evaluation/
-│       ├── metrics.py         ← seqeval P/R/F1 (global + por entidad)
-│       └── mlflow_logger.py   ← Tracking de los 3 runs LoRA
+│       ├── metrics.py         <- seqeval P/R/F1 (global + por entidad)
+│       └── mlflow_logger.py   <- Tracking de los 3 runs LoRA
 ├── scripts/
-│   ├── generate_dataset.py    ← Genera train/val/test con vocab disjunto
-│   ├── prepare_data.py        ← Valida los splits generados
-│   ├── train.py                ← Entrenamiento (--lora-r, --lora-alpha)
-│   └── evaluate.py             ← Evaluación final en test set
-├── inference.py                ← ENTREGABLE PRINCIPAL (raíz del proyecto)
-├── docs/ejemplos_txt/           ← Archivos .txt de prueba para inference.py
+│   ├── generate_dataset.py    <- Genera train/val/test con vocab disjunto
+│   ├── prepare_data.py        <- Valida los splits generados
+│   ├── train.py                <- Entrenamiento (--lora-r, --lora-alpha)
+│   └── evaluate.py             <- Evaluación final en test set
+├── inference.py                <- ENTREGABLE PRINCIPAL (raíz del proyecto)
+├── docs/ejemplos_txt/           <- Archivos .txt de prueba para inference.py
 ├── notebooks/
-│   └── eda_dataset.ipynb        ← Balance de clases, longitud, vocabulario
-├── tests/unit/                  ← 94 tests
-├── configs/model_config.yaml    ← Hiperparámetros (LoRA, training, labels)
-├── requirements.lock            ← Lockfile con hashes (pip-compile)
-├── dvc.yaml                     ← Pipeline: generate → train_r8/16/32 → evaluate
-└── reporte.pdf                  ← Reporte técnico (2-3 páginas)
+│   └── eda_dataset.ipynb        <- Balance de clases, longitud, vocabulario
+├── tests/unit/                  <- 94 tests
+├── configs/model_config.yaml    <- Hiperparámetros (LoRA, training, labels)
+├── requirements.lock            <- Lockfile con hashes (pip-compile)
+├── dvc.yaml                     <- Pipeline: generate → train_r8/16/32 → evaluate
+└── reporte.pdf                  <- Reporte técnico (2-3 páginas)
 ```
 
 ---
@@ -280,21 +280,3 @@ y se genera localmente con `scripts/generate_dataset.py`.
 
 ---
 
-## Conexión con el Módulo 2
-
-| Clase | Concepto | Dónde en el código |
-|---|---|---|
-| C6 | BPE, tokenización, alineación palabra↔subtoken | `data/alignment.py` |
-| C7 | Self-attention, Q/K/V (dentro de BETO) | Modelo base congelado |
-| C8 | MLM (preentrenamiento de BETO), fine-tuning, LoRA | `model/lora_model.py` |
-| C10 | HuggingFace, PEFT/LoRA, Trainer | Todo el pipeline de entrenamiento |
-| C11 | NER, esquema BIO, F1 vs accuracy, desbalance | `evaluation/metrics.py`, `data/schema.py` |
-
----
-
-## Referencias
-
-- Hu, E. et al. (2021). *LoRA: Low-Rank Adaptation of Large Language Models*. ICLR.
-- Devlin, J. et al. (2019). *BERT: Pre-training of Deep Bidirectional Transformers*. NAACL.
-- Cañete, J. et al. (2020). *Spanish Pre-Trained BERT Model and Evaluation Data* (BETO). PML4DC.
-- seqeval — github.com/chakki-works/seqeval
