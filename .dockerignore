@@ -1,0 +1,40 @@
+# ─────────────────────────────────────────────────────────────
+# .dockerignore — financial-ner-beto-lora
+# ─────────────────────────────────────────────────────────────
+
+.git/
+.gitignore
+.venv/
+venv/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Datos crudos — solo necesitamos los pesos LoRA y configs para inferencia
+data/
+
+# Otros modelos LoRA (r=8, r=32) — solo copiamos r=16 en el Dockerfile
+models/ner_lora_r8/
+models/ner_lora_r32/
+models/*.json
+models/ner_lora_r16/checkpoints/
+
+# Notebooks y docs no necesarios para inferencia
+notebooks/
+*.md
+reporte.pdf
+
+# MLflow
+mlruns/
+
+# DVC
+.dvc/
+*.dvc
+
+# OS
+.DS_Store
+Thumbs.db

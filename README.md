@@ -133,6 +133,32 @@ Si no se encuentran entidades, imprime `Sin entidades detectadas.`
 Por defecto usa el modelo `r=16` (`models/ner_lora_r16/lora_weights`),
 la configuración óptima encontrada en la comparación.
 
+### Uso con Docker (reproducibilidad garantizada)
+
+Al probar el proyecto en una segunda laptop se detectaron problemas de
+reproducibilidad: Python 3.13 no tiene wheel precompilado para
+`numpy==1.26.4` (fijado en el lockfile) y requiere un compilador C/C++
+no disponible en esa máquina. Se agregó un Dockerfile que fija
+Python 3.11 y todas las dependencias exactas, independiente del
+sistema anfitrión.
+
+```bash
+# Construir la imagen (incluye el modelo r=16, el óptimo)
+docker build -t financial-ner-lora .
+
+# Correr con el ejemplo por defecto
+docker run financial-ner-lora
+
+# Correr con tu propio archivo .txt (monta un volumen local)
+docker run -v /ruta/absoluta/a/tu/carpeta:/data financial-ner-lora \
+    python inference.py /data/tu_archivo.txt
+```
+
+Esto elimina cualquier dependencia de la versión de Python instalada,
+compilador C/C++, o políticas de seguridad de Windows (como el bloqueo
+de DLL de `safetensors` observado en una laptop corporativa) — el
+contenedor siempre corre exactamente el mismo entorno.
+
 ---
 
 ## La pieza técnica central: alineación de subtokens
@@ -216,6 +242,8 @@ financial-ner-beto-lora/
 │   ├── train.py                <- Entrenamiento (--lora-r, --lora-alpha)
 │   └── evaluate.py             <- Evaluación final en test set
 ├── inference.py                <- ENTREGABLE PRINCIPAL (raíz del proyecto)
+├── Dockerfile                   <- Imagen reproducible (Python 3.11 fijo, CPU-only)
+├── .dockerignore
 ├── docs/ejemplos_txt/           <- Archivos .txt de prueba para inference.py
 ├── notebooks/
 │   └── eda_dataset.ipynb        <- Balance de clases, longitud, vocabulario
